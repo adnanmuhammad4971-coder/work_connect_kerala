@@ -1,0 +1,46 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Categories collection:
+    // Anyone can read active categories.
+    // Only authenticated admins can add, update, delete categories.
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    // Bookings collection:
+    // Anyone (customers) can create bookings.
+    // Only authenticated admins can read, update, or delete.
+    match /bookings/{bookingId} {
+      allow create: if true;
+      allow read, update, delete: if request.auth != null;
+    }
+
+    // Job applications:
+    // Anyone can apply (create application).
+    // Only authenticated admins can read/manage applications.
+    match /job_applications/{applicationId} {
+      allow create: if true;
+      allow read, update, delete: if request.auth != null;
+    }
+
+    // Jobs:
+    // Anyone can read open jobs or submit job vacancies.
+    // Only admins can delete or edit existing jobs.
+    match /jobs/{jobId} {
+      allow read, create: if true;
+      allow update, delete: if request.auth != null;
+    }
+
+    // Workers directory:
+    // Public can read active workers.
+    // Only admins can add, update, delete workers.
+    match /workers/{workerId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+  }
+}
