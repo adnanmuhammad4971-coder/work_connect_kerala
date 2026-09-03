@@ -78,7 +78,7 @@ class AppDrawer extends StatelessWidget {
                   ),
                   const SizedBox(height: 14),
                   Text(
-                    appState.tr('WorkConnect Kerala', 'വർക്ക് കണക്ട് കേരള'),
+                    appState.appName,
                     style: const TextStyle(
                       color: Colors.white,
                       fontSize: 18,
@@ -88,7 +88,7 @@ class AppDrawer extends StatelessWidget {
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    appState.tr('Verified Workers & Direct Jobs', 'കേരള തൊഴിൽ & ലേബർ നെറ്റ്‌വർക്ക്'),
+                    appState.appTagline,
                     style: const TextStyle(
                       color: Color(0xFF94A3B8),
                       fontSize: 12,
@@ -311,8 +311,9 @@ class AppDrawer extends StatelessWidget {
                   Text(
                     'Kerala, India',
                     style: TextStyle(
-                      fontSize: 11,
-                      color: appState.textSecondary,
+                      fontSize: 10.5,
+                      fontWeight: FontWeight.w500,
+                      color: appState.textMuted,
                     ),
                   ),
                 ],

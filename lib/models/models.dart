@@ -272,41 +272,73 @@ class JobApplication {
 }
 
 class ContactInfo {
+  final String appName;
+  final String appTagline;
   final String phone;
   final String whatsapp;
   final String email;
   final String address;
   final String workingHours;
   final String emergencyNumber;
+  final String adminSmsNumber;
+  final bool enableSmsAlerts;
+  final String smsGatewayProvider; // 'fast2sms', 'twofactor', 'twilio', 'custom_api', 'direct_intent'
+  final String smsApiKey;
+  final String smsSenderId;
+  final String smsCustomUrl;
 
   ContactInfo({
+    this.appName = 'WorkConnect Kerala',
+    this.appTagline = 'Instant Worker Booking & Kerala Jobs Portal',
     this.phone = '+91 8129540062',
     this.whatsapp = '918129540062',
     this.email = 'support@workconnectkerala.in',
     this.address = 'Mavoor Road, Kozhikode, Kerala - 673001',
     this.workingHours = 'Mon - Sun: 7:00 AM - 10:00 PM',
     this.emergencyNumber = '+91 8129540062',
+    this.adminSmsNumber = '+91 8129540062',
+    this.enableSmsAlerts = true,
+    this.smsGatewayProvider = 'fast2sms',
+    this.smsApiKey = '',
+    this.smsSenderId = 'WKCONN',
+    this.smsCustomUrl = '',
   });
 
   factory ContactInfo.fromMap(Map<String, dynamic> data) {
     return ContactInfo(
-      phone: data['phone'] ?? '+91 9876543210',
-      whatsapp: data['whatsapp'] ?? '919876543210',
+      appName: data['appName'] ?? 'WorkConnect Kerala',
+      appTagline: data['appTagline'] ?? 'Instant Worker Booking & Kerala Jobs Portal',
+      phone: data['phone'] ?? '+91 8129540062',
+      whatsapp: data['whatsapp'] ?? '918129540062',
       email: data['email'] ?? 'support@workconnectkerala.in',
       address: data['address'] ?? 'Mavoor Road, Kozhikode, Kerala - 673001',
       workingHours: data['workingHours'] ?? 'Mon - Sun: 7:00 AM - 10:00 PM',
-      emergencyNumber: data['emergencyNumber'] ?? '+91 9876543210',
+      emergencyNumber: data['emergencyNumber'] ?? '+91 8129540062',
+      adminSmsNumber: data['adminSmsNumber'] ?? (data['phone'] ?? '+91 8129540062'),
+      enableSmsAlerts: data['enableSmsAlerts'] ?? true,
+      smsGatewayProvider: data['smsGatewayProvider'] ?? 'fast2sms',
+      smsApiKey: data['smsApiKey'] ?? '',
+      smsSenderId: data['smsSenderId'] ?? 'WKCONN',
+      smsCustomUrl: data['smsCustomUrl'] ?? '',
     );
   }
 
   Map<String, dynamic> toMap() {
     return {
+      'appName': appName,
+      'appTagline': appTagline,
       'phone': phone,
       'whatsapp': whatsapp,
       'email': email,
       'address': address,
       'workingHours': workingHours,
       'emergencyNumber': emergencyNumber,
+      'adminSmsNumber': adminSmsNumber,
+      'enableSmsAlerts': enableSmsAlerts,
+      'smsGatewayProvider': smsGatewayProvider,
+      'smsApiKey': smsApiKey,
+      'smsSenderId': smsSenderId,
+      'smsCustomUrl': smsCustomUrl,
     };
   }
 }

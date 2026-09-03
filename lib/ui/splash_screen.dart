@@ -2,6 +2,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:provider/provider.dart';
+import '../providers/app_state_provider.dart';
+import '../services/firestore_service.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -74,6 +77,14 @@ class _SplashScreenState extends State<SplashScreen>
     _mainController.forward();
     _progressController.forward();
 
+    // Fetch dynamic branding from Firebase for splash screen
+    FirestoreService().getContactInfo().then((info) {
+      if (mounted) {
+        Provider.of<AppStateProvider>(context, listen: false)
+            .updateBranding(info.appName, info.appTagline);
+      }
+    });
+
     // Navigate to home after 3.2 seconds
     Timer(const Duration(milliseconds: 3200), () {
       if (!mounted) return;
@@ -92,6 +103,13 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.of(context).size;
+    final appState = Provider.of<AppStateProvider>(context);
+
+    // Format app name nicely for splash
+    final appName = appState.appName.trim().isNotEmpty ? appState.appName.trim() : 'WorkConnect Kerala';
+    final parts = appName.split(' ');
+    final mainTitle = parts.length > 1 ? parts.sublist(0, parts.length - 1).join(' ').toUpperCase() : appName.toUpperCase();
+    final subTitle = parts.length > 1 ? parts.last.toUpperCase() : '';
 
     return Scaffold(
       backgroundColor: const Color(0xFF060B14),
@@ -160,11 +178,12 @@ class _SplashScreenState extends State<SplashScreen>
                         children: [
                           // Main Title
                           Text(
-                            'WORK CONNECT',
+                            mainTitle,
+                            textAlign: TextAlign.center,
                             style: GoogleFonts.outfit(
-                              fontSize: 28,
+                              fontSize: parts.length > 1 ? 26 : 28,
                               fontWeight: FontWeight.w800,
-                              letterSpacing: 4.0,
+                              letterSpacing: 3.5,
                               color: Colors.white,
                               shadows: [
                                 Shadow(
@@ -175,28 +194,30 @@ class _SplashScreenState extends State<SplashScreen>
                               ],
                             ),
                           ),
-                          const SizedBox(height: 4),
-
-                          // Kerala Golden Subtitle
-                          ShaderMask(
-                            shaderCallback: (bounds) => const LinearGradient(
-                              colors: [
-                                Color(0xFFFFE08A),
-                                Color(0xFFD4AF37),
-                                Color(0xFFF59E0B),
-                                Color(0xFFFFE08A),
-                              ],
-                            ).createShader(bounds),
-                            child: Text(
-                              'K E R A L A',
-                              style: GoogleFonts.outfit(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w900,
-                                letterSpacing: 9.0,
-                                color: Colors.white,
+                          if (subTitle.isNotEmpty) ...[
+                            const SizedBox(height: 4),
+                            // Golden Highlight Subtitle
+                            ShaderMask(
+                              shaderCallback: (bounds) => const LinearGradient(
+                                colors: [
+                                  Color(0xFFFFE08A),
+                                  Color(0xFFD4AF37),
+                                  Color(0xFFF59E0B),
+                                  Color(0xFFFFE08A),
+                                ],
+                              ).createShader(bounds),
+                              child: Text(
+                                subTitle.split('').join(' '),
+                                textAlign: TextAlign.center,
+                                style: GoogleFonts.outfit(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 7.0,
+                                  color: Colors.white,
+                                ),
                               ),
                             ),
-                          ),
+                          ],
 
                           const SizedBox(height: 18),
 
@@ -231,13 +252,16 @@ class _SplashScreenState extends State<SplashScreen>
                                 ),
                                 const SizedBox(width: 7),
                                 Text(
-                                  'Trusted Workers • Quality Service',
+                                  appState.appTagline.isNotEmpty
+                                      ? appState.appTagline
+                                      : 'Trusted Workers • Quality Service',
                                   style: GoogleFonts.poppins(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,
                                     letterSpacing: 0.5,
                                     color: const Color(0xFFF1F5F9),
                                   ),
+                                  textAlign: TextAlign.center,
                                 ),
                               ],
                             ),

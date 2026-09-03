@@ -293,7 +293,7 @@ class _HomePageState extends State<HomePage> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    appState.tr('WorkConnect Kerala', 'വർക്ക് കണക്ട് കേരള'),
+                    appState.appName,
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.w900,
@@ -303,7 +303,7 @@ class _HomePageState extends State<HomePage> {
                     overflow: TextOverflow.ellipsis,
                   ),
                   Text(
-                    appState.tr('Kerala Labor & Job Network', 'കേരള തൊഴിൽ & ലേബർ നെറ്റ്‌വർക്ക്'),
+                    appState.appTagline,
                     style: const TextStyle(
                       color: Color(0xFF94A3B8),
                       fontSize: 10.5,
@@ -326,6 +326,7 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
       body: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
@@ -350,7 +351,8 @@ class _HomePageState extends State<HomePage> {
             // 7. CUSTOMER TESTIMONIALS
             _buildTestimonialsSection(appState),
 
-            const SizedBox(height: 35),
+            // 8. FOOTER WITH QUICK LINKS & ADMIN LOGIN
+            _buildFooter(context, appState),
           ],
         ),
       ),
@@ -1430,6 +1432,80 @@ class _HomePageState extends State<HomePage> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildFooter(BuildContext context, AppStateProvider appState) {
+    return Container(
+      margin: const EdgeInsets.only(top: 24),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      decoration: BoxDecoration(
+        color: appState.cardBg,
+        border: Border(top: BorderSide(color: appState.borderCol)),
+      ),
+      child: Column(
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Container(
+                width: 28,
+                height: 28,
+                decoration: const BoxDecoration(shape: BoxShape.circle),
+                child: ClipOval(
+                  child: Image.asset(
+                    'asset/work connect logo.png',
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, __, ___) => const Icon(Icons.work_rounded, color: Color(0xFF0F4C81), size: 16),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                appState.appName,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: appState.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Text(
+            appState.appTagline,
+            style: TextStyle(fontSize: 11, color: appState.textSecondary),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 14),
+          Wrap(
+            alignment: WrapAlignment.center,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            spacing: 8,
+            children: [
+              TextButton(
+                onPressed: () => context.go('/booking'),
+                child: Text(appState.tr('Bookings', 'ബുക്കിംഗ്'), style: TextStyle(fontSize: 12, color: appState.textSecondary)),
+              ),
+              Text('•', style: TextStyle(color: appState.textSecondary)),
+              TextButton(
+                onPressed: () => context.go('/jobs'),
+                child: Text(appState.tr('Jobs', 'ജോലികൾ'), style: TextStyle(fontSize: 12, color: appState.textSecondary)),
+              ),
+              Text('•', style: TextStyle(color: appState.textSecondary)),
+              TextButton(
+                onPressed: () => context.go('/contact'),
+                child: Text(appState.tr('Support', 'സഹായം'), style: TextStyle(fontSize: 12, color: appState.textSecondary)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '© ${DateTime.now().year} ${appState.appName}. All rights reserved.',
+            style: TextStyle(fontSize: 10.5, color: appState.textMuted),
+          ),
+        ],
+      ),
     );
   }
 

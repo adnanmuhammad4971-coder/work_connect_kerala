@@ -52,6 +52,7 @@ dependencies:
   geolocator: ^14.0.2
   geocoding: ^5.0.0
   google_fonts: ^6.3.2
+  http: ^1.2.2
 
 dev_dependencies:
   flutter_test:

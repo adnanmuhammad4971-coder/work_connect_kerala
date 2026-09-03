@@ -3,10 +3,29 @@ import 'package:flutter/material.dart';
 class AppStateProvider extends ChangeNotifier {
   ThemeMode _themeMode = ThemeMode.light;
   bool _isMalayalam = false;
+  String _appName = 'WorkConnect Kerala';
+  String _appTagline = 'Instant Worker Booking & Kerala Jobs Portal';
 
   ThemeMode get themeMode => _themeMode;
   bool get isDarkMode => _themeMode == ThemeMode.dark;
   bool get isMalayalam => _isMalayalam;
+  String get appName => _appName;
+  String get appTagline => _appTagline;
+
+  void updateBranding(String name, String tagline) {
+    bool changed = false;
+    if (name.isNotEmpty && _appName != name) {
+      _appName = name;
+      changed = true;
+    }
+    if (tagline.isNotEmpty && _appTagline != tagline) {
+      _appTagline = tagline;
+      changed = true;
+    }
+    if (changed) {
+      notifyListeners();
+    }
+  }
 
   // ================= THEME TOGGLE =================
   void toggleTheme() {

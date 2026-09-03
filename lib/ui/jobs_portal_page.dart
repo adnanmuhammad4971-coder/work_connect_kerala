@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:provider/provider.dart';
@@ -156,49 +157,64 @@ class BrowseJobsTab extends StatefulWidget {
 }
 
 class _BrowseJobsTabState extends State<BrowseJobsTab> {
+  late final Stream<List<Job>> _jobsStream;
+  late final Stream<List<WorkerCategory>> _categoriesStream;
+  late final Stream<List<String>> _districtsStream;
+  StreamSubscription? _catSub;
+  StreamSubscription? _distSub;
+
+  final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   String _selectedCategory = 'All';
   String _selectedDistrict = 'All';
 
-  final List<String> _districts = [
-    'All',
-    'Thiruvananthapuram',
-    'Kollam',
-    'Pathanamthitta',
-    'Alappuzha',
-    'Kottayam',
-    'Idukki',
-    'Ernakulam',
-    'Thrissur',
-    'Palakkad',
-    'Malappuram',
-    'Kozhikode',
-    'Wayanad',
-    'Kannur',
-    'Kasaragod',
-  ];
+  List<String> _districts = ['All'];
+  List<String> _categories = ['All'];
 
-  final List<String> _categories = [
-    'All',
-    'Electrician',
-    'Plumber',
-    'Driver',
-    'Mason',
-    'Painter',
-    'Carpenter',
-    'Welder',
-    'Helper',
-    'Other',
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _jobsStream = FirestoreService().getJobs();
+    _categoriesStream = FirestoreService().getCategories();
+    _districtsStream = FirestoreService().getDistrictsStream();
+
+    // Dynamically fetch and sync categories from Firebase
+    _catSub = _categoriesStream.listen((categories) {
+      if (mounted) {
+        final catList = ['All', ...categories.map((c) => c.name).toSet()];
+        setState(() {
+          _categories = catList;
+        });
+      }
+    });
+
+    // Dynamically fetch and sync districts from Firebase
+    _distSub = _districtsStream.listen((districts) {
+      if (mounted) {
+        final distList = ['All', ...districts.toSet()];
+        setState(() {
+          _districts = distList;
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _catSub?.cancel();
+    _distSub?.cancel();
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final appState = Provider.of<AppStateProvider>(context);
 
     return StreamBuilder<List<Job>>(
-      stream: FirestoreService().getJobs(),
+      stream: _jobsStream,
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
+        if (snapshot.connectionState == ConnectionState.waiting && !snapshot.hasData) {
           return const Center(child: CircularProgressIndicator(color: Color(0xFF2563EB)));
         }
         var jobs = (snapshot.data ?? []).where((j) => j.status == 'Approved' || j.status == 'Open').toList();
@@ -216,11 +232,14 @@ class _BrowseJobsTabState extends State<BrowseJobsTab> {
 
         // Apply category filter
         if (_selectedCategory != 'All') {
+          final targetClean = _selectedCategory.split('(').first.trim().toLowerCase();
           jobs = jobs.where((j) {
             final cat = j.category.toLowerCase();
             final title = j.title.toLowerCase();
-            final target = _selectedCategory.toLowerCase();
-            return cat.contains(target) || title.contains(target);
+            final selected = _selectedCategory.toLowerCase();
+            return cat.contains(selected) ||
+                cat.contains(targetClean) ||
+                title.contains(targetClean);
           }).toList();
         }
 
@@ -232,6 +251,7 @@ class _BrowseJobsTabState extends State<BrowseJobsTab> {
         }
 
         return SingleChildScrollView(
+          physics: const BouncingScrollPhysics(),
           padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 16),
           child: Center(
             child: Container(
@@ -300,6 +320,7 @@ class _BrowseJobsTabState extends State<BrowseJobsTab> {
                       border: Border.all(color: appState.borderCol),
                     ),
                     child: TextField(
+                      controller: _searchController,
                       onChanged: (v) => setState(() => _searchQuery = v),
                       style: TextStyle(color: appState.textPrimary, fontSize: 14),
                       decoration: InputDecoration(
@@ -309,7 +330,10 @@ class _BrowseJobsTabState extends State<BrowseJobsTab> {
                         suffixIcon: _searchQuery.isNotEmpty
                             ? IconButton(
                                 icon: const Icon(Icons.clear_rounded, size: 18),
-                                onPressed: () => setState(() => _searchQuery = ''),
+                                onPressed: () {
+                                  _searchController.clear();
+                                  setState(() => _searchQuery = '');
+                                },
                               )
                             : null,
                         border: InputBorder.none,
@@ -401,6 +425,7 @@ class _BrowseJobsTabState extends State<BrowseJobsTab> {
                       if (_selectedCategory != 'All' || _selectedDistrict != 'All' || _searchQuery.isNotEmpty)
                         TextButton.icon(
                           onPressed: () {
+                            _searchController.clear();
                             setState(() {
                               _selectedCategory = 'All';
                               _selectedDistrict = 'All';
@@ -628,6 +653,7 @@ class _JobSeekerFormState extends State<JobSeekerForm> {
     final isMobile = MediaQuery.of(context).size.width < 700;
 
     return SingleChildScrollView(
+      physics: const BouncingScrollPhysics(),
       padding: EdgeInsets.symmetric(horizontal: isMobile ? 12.0 : 20.0, vertical: 24.0),
       child: Center(
         child: Container(

@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import '../models/models.dart';
 import '../providers/app_state_provider.dart';
 import '../services/firestore_service.dart';
+import '../services/sms_notification_service.dart';
 import 'widgets/app_drawer.dart';
 
 class WorkerBookingPage extends StatefulWidget {
@@ -291,6 +292,13 @@ class _WorkerBookingPageState extends State<WorkerBookingPage> {
 
       await FirestoreService().createBooking(newBooking);
 
+      // Trigger automatic SMS alert to admin in background
+      FirestoreService().getContactInfo().then((contactInfo) {
+        SmsNotificationService().sendBookingSmsNotification(newBooking, contactInfo);
+      }).catchError((e) {
+        debugPrint('[WorkerBooking] Error triggering SMS alert to admin: $e');
+      });
+
       if (mounted) {
         showDialog(
           context: context,
@@ -474,6 +482,7 @@ class _WorkerBookingPageState extends State<WorkerBookingPage> {
         ],
       ),
       body: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
         child: Column(
           children: [
             // ================= LUXURY HERO BANNER =================
@@ -780,37 +789,47 @@ class _WorkerBookingPageState extends State<WorkerBookingPage> {
 
                             const SizedBox(height: 12),
 
-                            // KERALA DISTRICT SELECTOR
-                            DropdownButtonFormField<String>(
-                              value: _selectedDistrict,
-                              isExpanded: true,
-                              dropdownColor: appState.cardBg,
-                              style: TextStyle(color: appState.textPrimary, fontSize: 13, fontWeight: FontWeight.w600),
-                              decoration: InputDecoration(
-                                labelText: appState.tr('Select Kerala District', 'ജില്ല തിരഞ്ഞെടുക്കുക'),
-                                labelStyle: TextStyle(color: appState.textSecondary, fontSize: 13),
-                                prefixIcon: const Icon(Icons.map_rounded, color: Color(0xFF2563EB), size: 20),
-                                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: appState.borderCol)),
-                                enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: appState.borderCol)),
-                                focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF38BDF8), width: 2)),
-                                filled: true,
-                                fillColor: appState.inputBg,
-                                contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                              ),
-                              items: _keralaDistricts.map((district) {
-                                return DropdownMenuItem<String>(
-                                  value: district,
-                                  child: Text(
-                                    district,
-                                    style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: appState.textPrimary),
-                                    overflow: TextOverflow.ellipsis,
+                            // DYNAMIC DISTRICT SELECTOR
+                            StreamBuilder<List<String>>(
+                              stream: FirestoreService().getDistrictsStream(),
+                              builder: (context, distSnap) {
+                                final districts = distSnap.data ?? _keralaDistricts;
+                                final currentSelected = districts.contains(_selectedDistrict)
+                                    ? _selectedDistrict
+                                    : (districts.isNotEmpty ? districts.first : 'Kozhikode');
+
+                                return DropdownButtonFormField<String>(
+                                  value: currentSelected,
+                                  isExpanded: true,
+                                  dropdownColor: appState.cardBg,
+                                  style: TextStyle(color: appState.textPrimary, fontSize: 13, fontWeight: FontWeight.w600),
+                                  decoration: InputDecoration(
+                                    labelText: appState.tr('Select Service District / Location', 'ജില്ല / സ്ഥലം തിരഞ്ഞെടുക്കുക'),
+                                    labelStyle: TextStyle(color: appState.textSecondary, fontSize: 13),
+                                    prefixIcon: const Icon(Icons.map_rounded, color: Color(0xFF2563EB), size: 20),
+                                    border: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: appState.borderCol)),
+                                    enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: BorderSide(color: appState.borderCol)),
+                                    focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(10), borderSide: const BorderSide(color: Color(0xFF38BDF8), width: 2)),
+                                    filled: true,
+                                    fillColor: appState.inputBg,
+                                    contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
                                   ),
+                                  items: districts.map((district) {
+                                    return DropdownMenuItem<String>(
+                                      value: district,
+                                      child: Text(
+                                        district,
+                                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: appState.textPrimary),
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    );
+                                  }).toList(),
+                                  onChanged: (val) {
+                                    if (val != null) {
+                                      setState(() => _selectedDistrict = val);
+                                    }
+                                  },
                                 );
-                              }).toList(),
-                              onChanged: (val) {
-                                if (val != null) {
-                                  setState(() => _selectedDistrict = val);
-                                }
                               },
                             ),
 

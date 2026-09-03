@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
@@ -6,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 import 'providers/app_state_provider.dart';
 import 'services/auth_service.dart';
+import 'services/firestore_service.dart';
 import 'ui/admin_dashboard_page.dart';
 import 'ui/admin_login_page.dart';
 import 'ui/contact_us_page.dart';
@@ -34,8 +36,8 @@ Page<dynamic> _buildPageWithTransition({
   return CustomTransitionPage<void>(
     key: state.pageKey,
     child: child,
-    transitionDuration: const Duration(milliseconds: 350),
-    reverseTransitionDuration: const Duration(milliseconds: 280),
+    transitionDuration: const Duration(milliseconds: 250),
+    reverseTransitionDuration: const Duration(milliseconds: 200),
     transitionsBuilder: (context, animation, secondaryAnimation, child) {
       final curved = CurvedAnimation(
         parent: animation,
@@ -46,7 +48,7 @@ Page<dynamic> _buildPageWithTransition({
         opacity: curved,
         child: SlideTransition(
           position: Tween<Offset>(
-            begin: const Offset(0.0, 0.03),
+            begin: const Offset(0.0, 0.015),
             end: Offset.zero,
           ).animate(curved),
           child: child,
@@ -125,15 +127,39 @@ final GoRouter _router = GoRouter(
   ],
 );
 
-class WorkConnectKeralaApp extends StatelessWidget {
+class WorkConnectKeralaApp extends StatefulWidget {
   const WorkConnectKeralaApp({super.key});
+
+  @override
+  State<WorkConnectKeralaApp> createState() => _WorkConnectKeralaAppState();
+}
+
+class _WorkConnectKeralaAppState extends State<WorkConnectKeralaApp> {
+  StreamSubscription? _brandingSub;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final appState = Provider.of<AppStateProvider>(context, listen: false);
+      _brandingSub = FirestoreService().getContactInfoStream().listen((info) {
+        appState.updateBranding(info.appName, info.appTagline);
+      });
+    });
+  }
+
+  @override
+  void dispose() {
+    _brandingSub?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final appState = Provider.of<AppStateProvider>(context);
 
     return MaterialApp.router(
-      title: 'Work Connect Kerala',
+      title: appState.appName,
       debugShowCheckedModeBanner: false,
       themeMode: appState.themeMode,
       theme: ThemeData(
@@ -175,6 +201,9 @@ class WorkConnectKeralaApp extends StatelessWidget {
           backgroundColor: Color(0xFF070B14),
           foregroundColor: Colors.white,
         ),
+      ),
+      scrollBehavior: const MaterialScrollBehavior().copyWith(
+        physics: const BouncingScrollPhysics(parent: AlwaysScrollableScrollPhysics()),
       ),
       routerConfig: _router,
     );

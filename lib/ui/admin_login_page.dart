@@ -64,7 +64,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
             child: Card(
               color: const Color(0xFF1E293B),
               elevation: 12,
-              shadowColor: Colors.black.withOpacity(0.5),
+              shadowColor: Colors.black.withValues(alpha: 0.5),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(24),
                 side: BorderSide(color: Colors.blueGrey.shade800),
@@ -121,7 +121,7 @@ class _AdminLoginPageState extends State<AdminLoginPage> {
                         Container(
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
-                            color: Colors.red.shade900.withOpacity(0.3),
+                            color: Colors.red.shade900.withValues(alpha: 0.3),
                             borderRadius: BorderRadius.circular(10),
                             border: Border.all(color: Colors.red.shade700),
                           ),

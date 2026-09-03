@@ -63,6 +63,81 @@ class FirestoreService {
   }
 
   // ==========================================
+  // DISTRICTS (Dynamic Kerala Districts)
+  // ==========================================
+  List<String> get keralaDefaultDistricts => [
+    'Thiruvananthapuram',
+    'Kollam',
+    'Pathanamthitta',
+    'Alappuzha',
+    'Kottayam',
+    'Idukki',
+    'Ernakulam',
+    'Thrissur',
+    'Palakkad',
+    'Malappuram',
+    'Kozhikode',
+    'Wayanad',
+    'Kannur',
+    'Kasaragod',
+  ];
+
+  Stream<List<String>> getDistrictsStream() {
+    return _db
+        .collection('system_settings')
+        .doc('districts')
+        .snapshots()
+        .map((snapshot) {
+      if (snapshot.exists && snapshot.data() != null) {
+        final List<dynamic>? list = snapshot.data()?['list'];
+        if (list != null && list.isNotEmpty) {
+          return list.map((e) => e.toString()).toList();
+        }
+      }
+      return keralaDefaultDistricts;
+    });
+  }
+
+  Future<void> updateDistricts(List<String> districts) async {
+    await _db.collection('system_settings').doc('districts').set({
+      'list': districts,
+      'updatedAt': FieldValue.serverTimestamp(),
+    });
+  }
+
+  Future<void> addDistrict(String newLocation) async {
+    final clean = newLocation.trim();
+    if (clean.isEmpty) return;
+    final doc = await _db.collection('system_settings').doc('districts').get();
+    List<String> current = [];
+    if (doc.exists && doc.data() != null && doc.data()?['list'] != null) {
+      current = List<String>.from(doc.data()!['list']);
+    } else {
+      current = List<String>.from(keralaDefaultDistricts);
+    }
+    if (!current.contains(clean)) {
+      current.add(clean);
+      await updateDistricts(current);
+    }
+  }
+
+  Future<void> deleteDistrict(String location) async {
+    final doc = await _db.collection('system_settings').doc('districts').get();
+    List<String> current = [];
+    if (doc.exists && doc.data() != null && doc.data()?['list'] != null) {
+      current = List<String>.from(doc.data()!['list']);
+    } else {
+      current = List<String>.from(keralaDefaultDistricts);
+    }
+    current.remove(location);
+    await updateDistricts(current);
+  }
+
+  Future<void> resetDistrictsToDefault() async {
+    await updateDistricts(keralaDefaultDistricts);
+  }
+
+  // ==========================================
   // BOOKINGS
   // ==========================================
   Future<void> createBooking(Booking booking) async {
