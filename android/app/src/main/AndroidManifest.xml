@@ -5,7 +5,7 @@
     <uses-permission android:name="android.permission.INTERNET" />
 
     <application
-        android:label="work_connect_kerala"
+        android:label="Work Connect Kerala"
         android:name="${applicationName}"
         android:icon="@mipmap/launcher_icon">
         <activity
