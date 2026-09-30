@@ -33,7 +33,7 @@ app.post('/make-call', async (req, res) => {
   const twiml = language === 'Malayalam'
     ? `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Say voice="Polly.Aditi" language="hi-IN">
+  <Say voice="alice" language="en-IN">
     Namaskaram. Work Connect Kerala il ninnum vilikkunnath.
     Kerala vil ${serviceText} thudangiya services
     labhyamakkunna oru workforce service aanu njangalude.
@@ -45,7 +45,7 @@ app.post('/make-call', async (req, res) => {
 </Response>`
     : `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Say voice="Polly.Joanna">
+  <Say voice="alice">
     Hello! This is Work Connect Kerala calling.
     We provide skilled workers for ${serviceText}
     and many more services across all districts of Kerala.
