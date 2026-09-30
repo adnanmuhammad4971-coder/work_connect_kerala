@@ -20,35 +20,33 @@ app.get('/', (req, res) => {
 
 // ─── TwiML Generator Route (Required for Twilio Trial Accounts) ──────
 app.post('/twiml', (req, res) => {
-  const { language, service } = req.query;
+  const { language, service, callId } = req.query;
+  const script = req.body.script;
 
   const serviceText = service && service !== 'All Services'
     ? service
     : 'cleaning, construction, coconut climbing, event workers, general labour';
 
-  const twiml = language === 'Malayalam'
-    ? `<?xml version="1.0" encoding="UTF-8"?>
+  const defaultMalayalam = `Namaskaram. Work Connect Kerala il ninnum vilikkunnath.
+Kerala vil ${serviceText} thudangiya services
+labhyamakkunna oru workforce service aanu njangalude.
+Thangalku ethenkilum worker service aavashyamundo?`;
+
+  const defaultEnglish = `Hello! This is Work Connect Kerala calling.
+We provide skilled workers for ${serviceText}
+and many more services across all districts of Kerala.
+Do you currently need any worker service?`;
+
+  const speechText = script || (language === 'Malayalam' ? defaultMalayalam : defaultEnglish);
+  const voiceLang = language === 'Malayalam' ? 'en-IN' : 'en-US';
+
+  const twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Say voice="alice" language="en-IN">
-    Namaskaram. Work Connect Kerala il ninnum vilikkunnath.
-    Kerala vil ${serviceText} thudangiya services
-    labhyamakkunna oru workforce service aanu njangalude.
-    Thangalku ethenkilum worker service aavashyamundo?
-    Engalude team uyarne bandhapedunnathaanu. Nanni.
-  </Say>
-  <Pause length="2"/>
-  <Hangup/>
-</Response>`
-    : `<?xml version="1.0" encoding="UTF-8"?>
-<Response>
-  <Say voice="alice">
-    Hello! This is Work Connect Kerala calling.
-    We provide skilled workers for ${serviceText}
-    and many more services across all districts of Kerala.
-    Do you currently need any worker service?
-    Our team will contact you shortly. Thank you.
-  </Say>
-  <Pause length="2"/>
+  <Gather input="speech" action="/gather?callId=${encodeURIComponent(callId || '')}" speechTimeout="auto" language="en-IN">
+    <Say voice="alice" language="${voiceLang}">${speechText}</Say>
+  </Gather>
+  <Say voice="alice">Thank you, we will contact you. Goodbye.</Say>
+  <Pause length="1"/>
   <Hangup/>
 </Response>`;
 
@@ -56,9 +54,43 @@ app.post('/twiml', (req, res) => {
   res.send(twiml);
 });
 
+// ─── Gather Speech Webhook ───────────────────────────────────────────
+app.post('/gather', async (req, res) => {
+  const { callId } = req.query;
+  const { SpeechResult } = req.body;
+  
+  if (callId && SpeechResult) {
+    try {
+      // Use Firebase REST API to update the document (Allowed by our new rules for unauthenticated users)
+      const firestoreUrl = `https://firestore.googleapis.com/v1/projects/jazeera-733f3/databases/(default)/documents/ai_calls/${callId}?updateMask.fieldPaths=customerResponse`;
+      
+      await fetch(firestoreUrl, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          fields: {
+            customerResponse: { stringValue: SpeechResult }
+          }
+        })
+      });
+      console.log(`✅ Saved customer response for ${callId}: ${SpeechResult}`);
+    } catch (error) {
+      console.error('❌ Failed to update Firestore:', error.message);
+    }
+  }
+
+  // Acknowledge after gathering
+  res.type('text/xml');
+  res.send(`<?xml version="1.0" encoding="UTF-8"?>
+<Response>
+  <Say voice="alice">Thank you, our team will review your response and contact you soon. Goodbye.</Say>
+  <Hangup/>
+</Response>`);
+});
+
 // ─── Make AI Call ────────────────────────────────────────────────────
 app.post('/make-call', async (req, res) => {
-  const { toNumber, language, service } = req.body;
+  const { toNumber, language, service, callId, script } = req.body;
 
   if (!toNumber) {
     return res.status(400).json({ error: 'Phone number required' });
@@ -70,7 +102,7 @@ app.post('/make-call', async (req, res) => {
     // Construct URL for TwiML endpoint (using the host from the request)
     const protocol = req.headers['x-forwarded-proto'] || req.protocol;
     const host = req.get('host');
-    const twimlUrl = `${protocol}://${host}/twiml?language=${encodeURIComponent(language || '')}&service=${encodeURIComponent(service || '')}`;
+    const twimlUrl = `${protocol}://${host}/twiml?language=${encodeURIComponent(language || '')}&service=${encodeURIComponent(service || '')}&callId=${encodeURIComponent(callId || '')}`;
 
     const call = await client.calls.create({
       to: formattedNumber,
