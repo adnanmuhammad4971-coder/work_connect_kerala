@@ -5,6 +5,7 @@ import '../models/models.dart';
 import '../services/auth_service.dart';
 import '../services/firestore_service.dart';
 import '../services/sms_notification_service.dart';
+import 'ai_call_center_page.dart';
 
 class AdminDashboardPage extends StatefulWidget {
   const AdminDashboardPage({super.key});
@@ -23,6 +24,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
     const JobApplicationsManagement(),
     const JobsManagement(),
     const WorkersManagement(),
+    const AiCallCenterPage(),
     const SettingsManagement(),
   ];
 
@@ -229,6 +231,7 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                 BottomNavigationBarItem(icon: Icon(Icons.badge_outlined), label: 'Seekers'),
                 BottomNavigationBarItem(icon: Icon(Icons.business_center_outlined), label: 'Jobs'),
                 BottomNavigationBarItem(icon: Icon(Icons.people_outline), label: 'Workers'),
+                BottomNavigationBarItem(icon: Icon(Icons.smart_toy_outlined), label: 'AI Calls'),
                 BottomNavigationBarItem(icon: Icon(Icons.settings_outlined), label: 'Settings'),
               ],
             )
@@ -285,6 +288,11 @@ class _AdminDashboardPageState extends State<AdminDashboardPage> {
                   icon: Icon(Icons.people_outline),
                   selectedIcon: Icon(Icons.people),
                   label: Text('Workers'),
+                ),
+                NavigationRailDestination(
+                  icon: Icon(Icons.smart_toy_outlined),
+                  selectedIcon: Icon(Icons.smart_toy),
+                  label: Text('AI Calls'),
                 ),
                 NavigationRailDestination(
                   icon: Icon(Icons.settings_outlined),

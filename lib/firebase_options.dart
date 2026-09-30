@@ -57,7 +57,6 @@ class DefaultFirebaseOptions {
     projectId: 'jazeera-733f3',
     storageBucket: 'jazeera-733f3.firebasestorage.app',
   );
-
   static const FirebaseOptions ios = FirebaseOptions(
     apiKey: 'AIzaSyC9019bwFcY4yGUay2xwrB1hpw-fDKuCA0',
     appId: '1:798557170930:ios:5f117f65dfe7ef3485b46b',
@@ -66,7 +65,6 @@ class DefaultFirebaseOptions {
     storageBucket: 'jazeera-733f3.firebasestorage.app',
     iosBundleId: 'com.example.workConnectKerala',
   );
-
   static const FirebaseOptions macos = FirebaseOptions(
     apiKey: 'AIzaSyC9019bwFcY4yGUay2xwrB1hpw-fDKuCA0',
     appId: '1:798557170930:ios:5f117f65dfe7ef3485b46b',

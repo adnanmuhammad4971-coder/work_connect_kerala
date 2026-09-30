@@ -119,6 +119,60 @@ app.post('/make-call', async (req, res) => {
   }
 });
 
+// ─── WhatsApp AI Voice Message ───────────────────────────────────────
+const googleTTS = require('google-tts-api');
+const axios = require('axios');
+
+app.post('/send-whatsapp-voice', async (req, res) => {
+  const { toNumber, script, language, callId } = req.body;
+
+  if (!toNumber) return res.status(400).json({ error: 'Phone number required' });
+  if (!script) return res.status(400).json({ error: 'Script required for WhatsApp Voice' });
+
+  try {
+    const formattedNumber = toNumber.startsWith('+') ? toNumber.substring(1) : (toNumber.startsWith('91') ? toNumber : `91${toNumber}`);
+    
+    // Generate Audio URL using google-tts-api
+    const langCode = language === 'Malayalam' ? 'ml' : 'en';
+    const audioUrl = googleTTS.getAudioUrl(script, {
+      lang: langCode,
+      slow: false,
+      host: 'https://translate.google.com',
+    });
+
+    const WA_TOKEN = process.env.WHATSAPP_TOKEN;
+    const WA_PHONE_ID = process.env.WHATSAPP_PHONE_ID;
+
+    if (!WA_TOKEN || !WA_PHONE_ID) {
+      // Return success with a warning if not configured yet so frontend can test
+      console.log(`⚠️ WhatsApp Voice generated but not sent. URL: ${audioUrl}`);
+      return res.json({ 
+        success: true, 
+        audioUrl: audioUrl,
+        warning: 'WhatsApp API credentials missing. Showing audio preview only.' 
+      });
+    }
+
+    // Send via WhatsApp Cloud API
+    const waResponse = await axios.post(
+      `https://graph.facebook.com/v17.0/${WA_PHONE_ID}/messages`,
+      {
+        messaging_product: 'whatsapp',
+        to: formattedNumber,
+        type: 'audio',
+        audio: { link: audioUrl }
+      },
+      { headers: { Authorization: `Bearer ${WA_TOKEN}` } }
+    );
+
+    console.log(`✅ WhatsApp Voice sent to ${formattedNumber}`);
+    res.json({ success: true, messageId: waResponse.data.messages[0].id, audioUrl });
+  } catch (error) {
+    console.error('❌ WhatsApp error:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // ─── Start Server ────────────────────────────────────────────────────
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
