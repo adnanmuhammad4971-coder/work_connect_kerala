@@ -132,12 +132,13 @@ app.post('/send-whatsapp-voice', async (req, res) => {
   try {
     const formattedNumber = toNumber.startsWith('+') ? toNumber.substring(1) : (toNumber.startsWith('91') ? toNumber : `91${toNumber}`);
     
-    // Generate Audio URL using google-tts-api
+    // Generate Audio URLs using google-tts-api for long text
     const langCode = language === 'Malayalam' ? 'ml' : 'en';
-    const audioUrl = googleTTS.getAudioUrl(script, {
+    const urls = googleTTS.getAllAudioUrls(script, {
       lang: langCode,
       slow: false,
       host: 'https://translate.google.com',
+      splitPunct: ',.?',
     });
 
     const WA_TOKEN = process.env.WHATSAPP_TOKEN;
@@ -145,28 +146,32 @@ app.post('/send-whatsapp-voice', async (req, res) => {
 
     if (!WA_TOKEN || !WA_PHONE_ID) {
       // Return success with a warning if not configured yet so frontend can test
-      console.log(`⚠️ WhatsApp Voice generated but not sent. URL: ${audioUrl}`);
+      console.log(`⚠️ WhatsApp Voice generated but not sent. URL count: ${urls.length}`);
       return res.json({ 
         success: true, 
-        audioUrl: audioUrl,
+        audioUrl: urls.length > 0 ? urls[0].url : '',
         warning: 'WhatsApp API credentials missing. Showing audio preview only.' 
       });
     }
 
     // Send via WhatsApp Cloud API
-    const waResponse = await axios.post(
-      `https://graph.facebook.com/v17.0/${WA_PHONE_ID}/messages`,
-      {
-        messaging_product: 'whatsapp',
-        to: formattedNumber,
-        type: 'audio',
-        audio: { link: audioUrl }
-      },
-      { headers: { Authorization: `Bearer ${WA_TOKEN}` } }
-    );
+    const messageIds = [];
+    for (const item of urls) {
+      const waResponse = await axios.post(
+        `https://graph.facebook.com/v17.0/${WA_PHONE_ID}/messages`,
+        {
+          messaging_product: 'whatsapp',
+          to: formattedNumber,
+          type: 'audio',
+          audio: { link: item.url }
+        },
+        { headers: { Authorization: `Bearer ${WA_TOKEN}` } }
+      );
+      messageIds.push(waResponse.data.messages[0].id);
+    }
 
-    console.log(`✅ WhatsApp Voice sent to ${formattedNumber}`);
-    res.json({ success: true, messageId: waResponse.data.messages[0].id, audioUrl });
+    console.log(`✅ WhatsApp Voice sent to ${formattedNumber} (${urls.length} parts)`);
+    res.json({ success: true, messageId: messageIds[0], audioUrl: urls[0].url });
   } catch (error) {
     console.error('❌ WhatsApp error:', error.message);
     res.status(500).json({ error: error.message });

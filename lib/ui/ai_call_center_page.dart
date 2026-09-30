@@ -129,6 +129,71 @@ Thangalku ethenkilum worker service aavashyamundo?''';
     }
   }
 
+  bool _isWhatsAppLoading = false;
+
+  Future<void> _sendWhatsAppAiVoice() async {
+    if (!_formKey.currentState!.validate()) return;
+    setState(() {
+      _isWhatsAppLoading = true;
+      _errorMessage = null;
+    });
+
+    try {
+      final phone = _phoneController.text.trim();
+      final service = _selectedService == 'All Services' ? '' : _selectedService;
+      final script = _scriptController.text.trim();
+
+      if (script.isEmpty) {
+        throw Exception('Please enter the AI Script to convert to WhatsApp voice.');
+      }
+
+      // Create Firestore record first (WhatsApp Voice)
+      final record = AiCallRecord(
+        id: '',
+        phone: phone,
+        service: service,
+        language: _selectedLanguage,
+        status: 'whatsapp_voice_sent',
+        createdAt: DateTime.now(),
+      );
+
+      final callId = await _callService.createCallRecord(record);
+
+      await _callService.sendWhatsAppVoice(
+        toNumber: phone,
+        callId: callId,
+        language: _selectedLanguage,
+        script: script,
+      );
+
+      setState(() {
+        _isWhatsAppLoading = false;
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.chat, color: Colors.white),
+                const SizedBox(width: 10),
+                Text('WhatsApp Voice Message sent to $phone'),
+              ],
+            ),
+            backgroundColor: const Color(0xFF10B981),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      }
+    } catch (e) {
+      setState(() {
+        _isWhatsAppLoading = false;
+        _errorMessage = e.toString().replaceAll('Exception: ', '');
+      });
+    }
+  }
+
   void _stopCall() async {
     if (_activeCallId != null) {
       await _callService.updateCallRecord(_activeCallId!, {
@@ -641,6 +706,37 @@ Thangalku ethenkilum worker service aavashyamundo?''';
                           const Color(0xFF6366F1).withOpacity(0.5),
                     ),
                     onPressed: _isLoading ? null : _startAiCall,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                // Send WhatsApp Voice Button
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    icon: _isWhatsAppLoading
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(
+                                strokeWidth: 2, color: Colors.white))
+                        : const Icon(Icons.chat_bubble_rounded, size: 20),
+                    label: Text(
+                      _isWhatsAppLoading ? 'Sending...' : '🟢 SEND FREE WHATSAPP AI VOICE',
+                      style: const TextStyle(
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.5,
+                          fontSize: 12),
+                    ),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF10B981),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14)),
+                      elevation: 8,
+                      shadowColor: const Color(0xFF10B981).withOpacity(0.5),
+                    ),
+                    onPressed: (_isLoading || _isWhatsAppLoading) ? null : _sendWhatsAppAiVoice,
                   ),
                 ),
                 const SizedBox(height: 12),

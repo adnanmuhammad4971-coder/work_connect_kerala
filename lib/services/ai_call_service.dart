@@ -139,6 +139,37 @@ class AiCallService {
     await _db.collection('ai_calls').doc(callId).delete();
   }
 
+  // ─── WhatsApp AI Voice via Render.com Backend ──────────────────────
+  
+  Future<String> sendWhatsAppVoice({
+    required String toNumber,
+    required String callId,
+    required String language,
+    required String script,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$_backendUrl/send-whatsapp-voice'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'toNumber': toNumber,
+        'callId': callId,
+        'language': language,
+        'script': script,
+      }),
+    );
+
+    if (response.statusCode == 200) {
+      final jsonResponse = jsonDecode(response.body);
+      if (jsonResponse['error'] != null) {
+        throw Exception(jsonResponse['error']);
+      }
+      return jsonResponse['audioUrl'] ?? '';
+    } else {
+      final errorMap = jsonDecode(response.body);
+      throw Exception(errorMap['error'] ?? 'Failed to send WhatsApp message');
+    }
+  }
+
   // ─── Call via Render.com Backend (avoids CORS) ────────────────────
 
   /// Initiates an outbound call via Render.com Express backend → Twilio.
